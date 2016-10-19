@@ -1,0 +1,19 @@
+{
+  "name": "json2xml-server",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yonib/xml2json.git"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "xml-objtree": "^0.24.2"
+  },
+  "devDependencies": {
+    "mocha": "^3.1.2"
+  },
+  "license": "MIT"
+}
