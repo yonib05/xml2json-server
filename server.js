@@ -20,7 +20,7 @@ http.createServer(function (req, res) {
         res.end(JSON.stringify({"status": 401}), "utf-8");
         return;
     }
-    if (req.url === "/status") {
+    if (req.url === "/status" || req.method === "GET" ) {
         res.writeHead(200, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
