@@ -15,7 +15,7 @@ http.createServer(function (req, res) {
         username=parts[0],
         password=parts[1];
     //check against process user and pass variables (pass in case sensitive)
-    if(username.toLowerCase() !== process.env.HTTP_USERNAME.toLowerCase() && password !== process.env.HTTP_PASSWORD){
+    if(username.toLowerCase() !== process.env.HTTP_USERNAME.toLowerCase() || password !== process.env.HTTP_PASSWORD){
         res.writeHead(401, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 401}), "utf-8");
         return;
