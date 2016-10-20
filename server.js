@@ -14,7 +14,7 @@ http.createServer(function (req, res) {
         return;
     }
     //is server functioning
-    if (req.url === "/status" || req.method === "GET") {
+    if (req.url === "/status") {
         res.writeHead(200, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
@@ -35,6 +35,19 @@ http.createServer(function (req, res) {
     //lets get cracking
     var url_parts = url.parse(req.url, true);
     var query = url_parts.query;
+    var protocol = req.headers['req_protocol'] || query.protocol || 'http:',
+        host = req.headers['req_host'] || query.host || '',
+        path = req.headers['req_path'] || query.path || '',
+        port = req.headers['req_port'] || query.port || 80,
+        soap_action = req.headers['req_action'] || query.action || '' ,
+        content_type = req.headers['req_type'] || query.type || "text/xml";
+
+    if(!host.length) {
+        res.writeHead(400, {"Content-Type": "application/json"});
+        res.end(JSON.stringify({"status": 400}), "utf-8");
+        return;
+    }
+
     var request_json = "",
         request_xml = "",
         response_xml = "",
@@ -53,26 +66,27 @@ http.createServer(function (req, res) {
         }
     });
     req.on("end", function () {
-        //get json request
-        req.body = JSON.parse(req.body);
-        request_json = req.body.request;
-        //convert json request to xml
-        request_xml = objTree.writeXML(request_json);
+        if( req.body ){
+            //get json request
+            request_json =  JSON.parse(req.body);
+            //convert json request to xml
+            request_xml = objTree.writeXML(request_json);
+        }
         //process request to remote server
         var request = http.request({
-            protocol: req.body.protocol || "http:",
-            host: req.body.host || query.host,
-            port: req.body.port || query.port || 80,
-            path: req.body.path || query.path,
-            method: req.body.request ? "POST" : "GET",
+            protocol: protocol,
+            host: host,
+            port: port,
+            path: path,
+            method: req.body.length ? "POST" : "GET",
             headers: {
                 "User-Agent": MODNAME + "/" + VERSION,
                 "Accept": "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
                 "Accept-Encoding": "none",
                 "Accept-Charset": "utf-8",
                 "Connection": "close",
-                "Content-Type": req.body["content-type"] || "text/xml",
-                "SOAPAction": req.body.SOAPAction || "",
+                "Content-Type": content_type,
+                "SOAPAction": soap_action,
                 "Content-Length": Buffer.byteLength(request_xml)
             }
         }, function (response) {
@@ -81,10 +95,18 @@ http.createServer(function (req, res) {
                 body += d;
             });
             response.on("end", function () {
-                //get xml response from server
-                response_xml = body;
-                //convert to json
-                response_json = objTree.parseXML(response_xml);
+                if (body.length){
+                    //get xml response from server
+                    response_xml = body;
+                    //convert to json
+                    try {
+                        response_json = objTree.parseXML(response_xml);
+                    }
+                    catch(e){
+                        response_json = body;
+                    }
+                }
+
                 //send back to original requester
                 res.writeHead(200, {"Content-Type": "application/json"});
                 res.end(JSON.stringify(response_json), "utf-8");
@@ -105,4 +127,9 @@ http.createServer(function (req, res) {
         //close connection to remote server
         request.end();
     });
+
+
+
+
+
 }).listen(process.env.PORT || 8081);
