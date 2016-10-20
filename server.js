@@ -8,19 +8,19 @@ var VERSION = require("./package.json").version;
 
 http.createServer(function (req, res) {
     // authenticate request
-    var header=req.headers.authorization ||"",        // get the header
-        token=header.split(/\s+/).pop()||"",            // and the encoded auth token
-        auth=new Buffer(token, "base64").toString(),    // convert from base64
-        parts=auth.split(/:/),                          // split on colon
-        username=parts[0],
-        password=parts[1];
+    var header = req.headers.authorization || "",        // get the header
+        token = header.split(/\s+/).pop() || "",            // and the encoded auth token
+        auth = new Buffer(token, "base64").toString(),    // convert from base64
+        parts = auth.split(/:/),                          // split on colon
+        username = parts[0],
+        password = parts[1];
     //check against process user and pass variables (pass in case sensitive)
-    if(username.toLowerCase() !== process.env.HTTP_USERNAME.toLowerCase() || password !== process.env.HTTP_PASSWORD){
+    if (username.toLowerCase() !== process.env.HTTP_USERNAME.toLowerCase() || password !== process.env.HTTP_PASSWORD) {
         res.writeHead(401, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 401}), "utf-8");
         return;
     }
-    if (req.url === "/status" || req.method === "GET" ) {
+    if (req.url === "/status") {
         res.writeHead(200, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
@@ -45,8 +45,13 @@ http.createServer(function (req, res) {
         }
     });
     req.on("end", function () {
+        if (!req.body && !req.body.length) {
+            res.writeHead(200, {"Content-Type": "application/json"});
+            res.end(JSON.stringify({"status": 200}), "utf-8");
+            return;
+        }
         //get json request
-        if (req.body.length) req.body = JSON.parse(req.body);
+        req.body = JSON.parse(req.body);
         request_json = req.body.request;
         //convert json request to xml
         request_xml = objTree.writeXML(request_json);
@@ -64,7 +69,7 @@ http.createServer(function (req, res) {
                 "Accept-Charset": "utf-8",
                 "Connection": "close",
                 "Content-Type": req.body["content-type"] || "text/xml",
-                "SOAPAction" : req.body.SOAPAction || "",
+                "SOAPAction": req.body.SOAPAction || "",
                 "Content-Length": Buffer.byteLength(request_xml)
             }
         }, function (response) {
