@@ -35,12 +35,12 @@ http.createServer(function (req, res) {
     //lets get cracking
     var url_parts = url.parse(req.url, true);
     var query = url_parts.query;
-    var protocol = req.headers['req_protocol'] || query.protocol || 'http:',
-        host = req.headers['req_host'] || query.host || '',
-        path = req.headers['req_path'] || query.path || '',
-        port = req.headers['req_port'] || query.port || 80,
-        soap_action = req.headers['req_action'] || query.action || '' ,
-        content_type = req.headers['req_type'] || query.type || "text/xml";
+    var protocol = req.headers.req_protocol || query.protocol || 'http:',
+        host = req.headers.req_host || query.host || '',
+        path = req.headers.req_path || query.path || '',
+        port = req.headers.req_port || query.port || 80,
+        soap_action = req.headers.req_action || query.action || '' ,
+        content_type = req.headers.req_type || query.type || "text/xml";
 
     if(!host.length) {
         res.writeHead(400, {"Content-Type": "application/json"});
