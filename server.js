@@ -7,7 +7,19 @@ var MODNAME = require("./package.json").name;
 var VERSION = require("./package.json").version;
 
 http.createServer(function (req, res) {
-    // authenticate request
+    //dealing with favicons
+    if (req.url === "/favicon.ico") {
+        res.writeHead(200, {"Content-Type": "image/x-icon"} );
+        res.end();
+        return;
+    }
+    //is server functioning
+    if (req.url === "/status" || req.method === "GET") {
+        res.writeHead(200, {"Content-Type": "application/json"});
+        res.end(JSON.stringify({"status": 200}), "utf-8");
+        return;
+    }
+    // test authenticate of request
     var header = req.headers.authorization || "",        // get the header
         token = header.split(/\s+/).pop() || "",            // and the encoded auth token
         auth = new Buffer(token, "base64").toString(),    // convert from base64
@@ -20,11 +32,7 @@ http.createServer(function (req, res) {
         res.end(JSON.stringify({"status": 401}), "utf-8");
         return;
     }
-    if (req.url === "/status") {
-        res.writeHead(200, {"Content-Type": "application/json"});
-        res.end(JSON.stringify({"status": 200}), "utf-8");
-        return;
-    }
+    //lets get cracking
     var url_parts = url.parse(req.url, true);
     var query = url_parts.query;
     var request_json = "",
@@ -45,11 +53,6 @@ http.createServer(function (req, res) {
         }
     });
     req.on("end", function () {
-        if (!req.body && !req.body.length) {
-            res.writeHead(200, {"Content-Type": "application/json"});
-            res.end(JSON.stringify({"status": 200}), "utf-8");
-            return;
-        }
         //get json request
         req.body = JSON.parse(req.body);
         request_json = req.body.request;
