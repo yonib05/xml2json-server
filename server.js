@@ -77,6 +77,8 @@ http.createServer(function (req, res) {
             request_xml = objTree.writeXML(request_json);
         }
 
+
+        
         //temporary logging
         console.log(request_json);
         console.log(request_xml);
