@@ -19,6 +19,10 @@ http.createServer(function (req, res) {
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
     }
+
+
+
+
     // test authenticate of request
     var header = req.headers.authorization || "",        // get the header
         token = header.split(/\s+/).pop() || "",            // and the encoded auth token
@@ -72,6 +76,8 @@ http.createServer(function (req, res) {
             //convert json request to xml
             request_xml = objTree.writeXML(request_json);
         }
+        console.log(request_json);
+        console.log(request_xml);
         //process request to remote server
         var request = http.request({
             protocol: protocol,
