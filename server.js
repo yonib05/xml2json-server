@@ -76,8 +76,12 @@ http.createServer(function (req, res) {
             //convert json request to xml
             request_xml = objTree.writeXML(request_json);
         }
+
+        //temporary logging
         console.log(request_json);
         console.log(request_xml);
+        //end temporary logging
+
         //process request to remote server
         var request = http.request({
             protocol: protocol,
