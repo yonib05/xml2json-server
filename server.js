@@ -6,7 +6,13 @@ var http = require("http"),
 var MODNAME = require("./package.json").name;
 var VERSION = require("./package.json").version;
 
+var logger = {log : console.log, warn: console.warn, error: console.error};
+if (process.env.DEBUG === true) {
+    logger = require('./logger');
+}
+
 http.createServer(function (req, res) {
+    logger.log('debug',  req.method + ' request received to ' + req.url);
     //dealing with favicons
     if (req.url === "/favicon.ico") {
         res.writeHead(200, {"Content-Type": "image/x-icon"} );
@@ -19,8 +25,6 @@ http.createServer(function (req, res) {
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
     }
-
-
 
 
     // test authenticate of request
@@ -45,7 +49,8 @@ http.createServer(function (req, res) {
         port = req.headers.req_port || query.port || 80,
         soap_action = req.headers.req_action || query.action || '' ,
         content_type = req.headers.req_type || query.type || "text/xml";
-
+    logger.log(req.headers);
+    logger.log(host);
     if(!host.length) {
         res.writeHead(400, {"Content-Type": "application/json"});
         res.end(JSON.stringify({"status": 400}), "utf-8");
@@ -70,74 +75,69 @@ http.createServer(function (req, res) {
         }
     });
     req.on("end", function () {
-        if( req.body ){
+        if( req.body ) {
             //get json request
-            request_json =  JSON.parse(req.body);
+            request_json = JSON.parse(req.body);
             //convert json request to xml
             request_xml = objTree.writeXML(request_json);
-        }
+            logger.log(request_json);
+            logger.log(request_xml);
 
-
-        
-        //temporary logging
-        console.log(request_json);
-        console.log(request_xml);
-        //end temporary logging
-
-        //process request to remote server
-        var request = http.request({
-            protocol: protocol,
-            host: host,
-            port: port,
-            path: path,
-            method: req.body.length ? "POST" : "GET",
-            headers: {
-                "User-Agent": MODNAME + "/" + VERSION,
-                "Accept": "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
-                "Accept-Encoding": "none",
-                "Accept-Charset": "utf-8",
-                "Connection": "close",
-                "Content-Type": content_type,
-                "SOAPAction": soap_action,
-                "Content-Length": Buffer.byteLength(request_xml)
-            }
-        }, function (response) {
-            var body = "";
-            response.on("data", function (d) {
-                body += d;
-            });
-            response.on("end", function () {
-                if (body.length){
-                    //get xml response from server
-                    response_xml = body;
-                    //convert to json
-                    try {
-                        response_json = objTree.parseXML(response_xml);
-                    }
-                    catch(e){
-                        response_json = body;
-                    }
+            //process request to remote server
+            var request = http.request({
+                protocol: protocol,
+                host: host,
+                port: port,
+                path: path,
+                method: req.body.length ? "POST" : "GET",
+                headers: {
+                    "User-Agent": MODNAME + "/" + VERSION,
+                    "Accept": "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Encoding": "none",
+                    "Accept-Charset": "utf-8",
+                    "Connection": "close",
+                    "Content-Type": content_type,
+                    "SOAPAction": soap_action,
+                    "Content-Length": Buffer.byteLength(request_xml)
                 }
+            }, function (response) {
+                var body = "";
+                response.on("data", function (d) {
+                    body += d;
+                });
+                response.on("end", function () {
+                    if (body.length) {
+                        //get xml response from server
+                        response_xml = body;
+                        //convert to json
+                        try {
+                            response_json = objTree.parseXML(response_xml);
+                        }
+                        catch (e) {
+                            response_json = body;
+                        }
+                    }
 
-                //send back to original requester
-                res.writeHead(200, {"Content-Type": "application/json"});
-                res.end(JSON.stringify(response_json), "utf-8");
+                    //send back to original requester
+                    res.writeHead(200, {"Content-Type": "application/json"});
+                    res.end(JSON.stringify(response_json), "utf-8");
+                });
             });
-        });
-        // If Request to remote server failed return to sender why
-        request.on("error", function (error) {
-            if (error.code === "ENOENT") {
-                res.writeHead(200, {"Content-Type": "application/json"});
-                res.end(JSON.stringify(error), "utf-8");
-            } else {
-                res.writeHead(500);
-                res.end("Sorry, check with the site admin for error: " + error.message + " ..\n");
-            }
-        });
-        //Execute request
-        request.write(request_xml);
-        //close connection to remote server
-        request.end();
+            // If Request to remote server failed return to sender why
+            request.on("error", function (error) {
+                if (error.code === "ENOENT") {
+                    res.writeHead(200, {"Content-Type": "application/json"});
+                    res.end(JSON.stringify(error), "utf-8");
+                } else {
+                    res.writeHead(500);
+                    res.end("Sorry, check with the site admin for error: " + error.message + " ..\n");
+                }
+            });
+            //Execute request
+            request.write(request_xml);
+            //close connection to remote server
+            request.end();
+        }
     });
 
 
