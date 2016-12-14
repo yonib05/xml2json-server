@@ -120,6 +120,7 @@ http.createServer(function (req, res) {
 
                     //send back to original requester
                     res.writeHead(200, {"Content-Type": "application/json"});
+                    logger.log(response_xml);
                     logger.log(response_json);
                     res.end(JSON.stringify(response_json), "utf-8");
                 });
