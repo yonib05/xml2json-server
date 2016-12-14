@@ -120,6 +120,7 @@ http.createServer(function (req, res) {
 
                     //send back to original requester
                     res.writeHead(200, {"Content-Type": "application/json"});
+                    logger.log(response_json);
                     res.end(JSON.stringify(response_json), "utf-8");
                 });
             });
@@ -127,9 +128,11 @@ http.createServer(function (req, res) {
             request.on("error", function (error) {
                 if (error.code === "ENOENT") {
                     res.writeHead(200, {"Content-Type": "application/json"});
+                    logger.error(error);
                     res.end(JSON.stringify(error), "utf-8");
                 } else {
                     res.writeHead(500);
+                    logger.error(error);
                     res.end("Sorry, check with the site admin for error: " + error.message + " ..\n");
                 }
             });
