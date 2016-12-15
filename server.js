@@ -83,6 +83,24 @@ http.createServer(function (req, res) {
             logger.log(request_json);
             logger.log(request_xml);
 
+            logger.log(JSON.stringify({
+                protocol: protocol,
+                host: host,
+                port: port,
+                path: path,
+                method: req.body.length ? "POST" : "GET",
+                headers: {
+                    "User-Agent": MODNAME + "/" + VERSION,
+                    "Accept": "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Encoding": "none",
+                    "Accept-Charset": "utf-8",
+                    "Connection": "close",
+                    "Content-Type": content_type,
+                    "SOAPAction": soap_action,
+                    "Content-Length": Buffer.byteLength(request_xml)
+                }
+            }));
+
             //process request to remote server
             var request = http.request({
                 protocol: protocol,
@@ -105,25 +123,34 @@ http.createServer(function (req, res) {
                 response.on("data", function (d) {
                     body += d;
                 });
-                response.on("end", function (end_response) {
-                    if (body.length) {
-                        //get xml response from server
-                        response_xml = body;
-                        //convert to json
-                        try {
-                            response_json = objTree.parseXML(response_xml);
+                response.on("end", function () {
+                    if(response.statusCode === 200){
+                        if (body.length) {
+                            //get xml response from server
+                            response_xml = body;
+                            //convert to json
+                            try {
+                                response_json = objTree.parseXML(response_xml);
+                            }
+                            catch (e) {
+                                response_json = body;
+                            }
                         }
-                        catch (e) {
-                            response_json = body;
-                        }
+
+                        logger.log(response);
+                        //send back to original requester
+                        res.writeHead(response.statusCode, {"Content-Type": "application/json"});
+                        logger.log(response_xml);
+                        logger.log(response_json);
+                        res.end(JSON.stringify(response_json), "utf-8");
+
+
+                    }
+                    else{
+                        res.writeHead(response.statusCode, {"Content-Type": "application/json"});
+                        res.end(JSON.stringify({error: response.statusCode, message: response.statusMessage, body: body}), "utf-8");
                     }
 
-                    logger.log(end_response);
-                    //send back to original requester
-                    res.writeHead(end_response.statusCode, {"Content-Type": "application/json"});
-                    logger.log(response_xml);
-                    logger.log(response_json);
-                    res.end(JSON.stringify(response_json), "utf-8");
                 });
             });
             // If Request to remote server failed return to sender why

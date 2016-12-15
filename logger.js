@@ -13,7 +13,7 @@ module.exports = new (winston.Logger)({
             token: process.env.LOG_SLACK_TOKEN || 'some-key',
             channel: process.env.LOG_SLACK_CHANNEL || 'xml2json',
             username : process.env.LOG_SLACK_USER || 'username',
-            level: process.env.LOG_LEVEL || 'info'
+            level: process.env.LOG_LEVEL || 'silly'
         })
     ]
 });
