@@ -105,7 +105,7 @@ http.createServer(function (req, res) {
                 response.on("data", function (d) {
                     body += d;
                 });
-                response.on("end", function (response) {
+                response.on("end", function (end_response) {
                     if (body.length) {
                         //get xml response from server
                         response_xml = body;
@@ -118,8 +118,9 @@ http.createServer(function (req, res) {
                         }
                     }
 
+                    logger.log(end_response);
                     //send back to original requester
-                    res.writeHead(response.statusCode, {"Content-Type": "application/json"});
+                    res.writeHead(end_response.statusCode, {"Content-Type": "application/json"});
                     logger.log(response_xml);
                     logger.log(response_json);
                     res.end(JSON.stringify(response_json), "utf-8");
