@@ -5,11 +5,21 @@ var http = require("http"),
     objTree = new ObjTree();
 var MODNAME = require("./package.json").name;
 var VERSION = require("./package.json").version;
-
-var logger = {log : console.log, warn: console.warn, error: console.error};
-if (process.env.DEBUG === true) {
-    logger = require('./logger');
+var noop = function(){};
+var logger;
+if(process.env.ENV !== 'production') {
+    if (process.env.LOGGER === true) {
+        logger = require('./logger');
+    }
+    else {
+        logger = {log : console.log, warn: console.warn, error: console.error};
+    }
 }
+else {
+    logger = {log : noop, warn: noop, error: noop};
+}
+
+
 
 http.createServer(function (req, res) {
     logger.log('debug',  req.method + ' request received to ' + req.url);
@@ -25,7 +35,6 @@ http.createServer(function (req, res) {
         res.end(JSON.stringify({"status": 200}), "utf-8");
         return;
     }
-
 
     // test authenticate of request
     var header = req.headers.authorization || "",        // get the header
@@ -177,3 +186,7 @@ http.createServer(function (req, res) {
 
 
 }).listen(process.env.PORT || 8081);
+
+
+
+
